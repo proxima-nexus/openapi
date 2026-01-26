@@ -34,6 +34,7 @@
     "homepage": "https://github.com/proxima-nexus/openapi#readme",
     "publishConfig": {
       "access": "public",
+      "provenance": "true",
       "registry": "https://registry.npmjs.org/"
     },
     "devDependencies": {
