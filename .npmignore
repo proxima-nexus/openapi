@@ -1,0 +1,28 @@
+# Source files (if you add any)
+src/
+scripts/
+
+# Development files
+.github/
+.git/
+.gitignore
+.npmignore
+
+# CI/CD
+*.yml
+*.yaml
+!openapi.yaml
+
+# Documentation (optional - you might want to include README)
+# README.md
+
+# Tests
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Dependencies
+node_modules/
+package-lock.json

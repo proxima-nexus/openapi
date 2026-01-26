@@ -1,0 +1,45 @@
+{
+    "name": "@proxima-nexus/openapi",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for Proxima Nexus",
+    "main": "openapi.json",
+    "types": "openapi.json",
+    "files": [
+      "openapi.json",
+      "openapi.yaml",
+      "README.md",
+      "LICENSE"
+    ],
+    "scripts": {
+      "validate": "swagger-cli validate openapi.yaml",
+      "prepublishOnly": "npm run validate"
+    },
+    "keywords": [
+      "openapi",
+      "swagger",
+      "api",
+      "specification",
+      "proxima-nexus",
+      "rest-api"
+    ],
+    "author": "Proxima Nexus",
+    "license": "ISC",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/proxima-nexus/openapi.git"
+    },
+    "bugs": {
+      "url": "https://github.com/proxima-nexus/openapi/issues"
+    },
+    "homepage": "https://github.com/proxima-nexus/openapi#readme",
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org/"
+    },
+    "devDependencies": {
+      "@apidevtools/swagger-cli": "^4.0.4"
+    },
+    "engines": {
+      "node": ">=18.x"
+    }
+  }

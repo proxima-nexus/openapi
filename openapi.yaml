@@ -1,0 +1,1500 @@
+openapi: 3.0.0
+paths:
+  /user:
+    post:
+      operationId: UserController_create
+      summary: Create a user
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserDto'
+      responses:
+        '201':
+          description: Created user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutateUserResponseDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+    get:
+      operationId: UserController_search
+      summary: Search users
+      parameters:
+        - name: displayName
+          required: false
+          in: query
+          description: Display name search (ILIKE)
+          schema:
+            example: Keyword
+            type: string
+        - name: latitude
+          required: false
+          in: query
+          description: Latitude for radius search
+          schema:
+            example: 40.7128
+            type: number
+        - name: longitude
+          required: false
+          in: query
+          description: Longitude for radius search
+          schema:
+            example: -74.006
+            type: number
+        - name: radius
+          required: false
+          in: query
+          description: Radius in meters for radius search
+          schema:
+            example: 5000
+            type: number
+        - name: minLatitude
+          required: false
+          in: query
+          description: Minimum latitude for bounding box
+          schema:
+            example: 40
+            type: number
+        - name: maxLatitude
+          required: false
+          in: query
+          description: Maximum latitude for bounding box
+          schema:
+            example: 41
+            type: number
+        - name: minLongitude
+          required: false
+          in: query
+          description: Minimum longitude for bounding box
+          schema:
+            example: -75
+            type: number
+        - name: maxLongitude
+          required: false
+          in: query
+          description: Maximum longitude for bounding box
+          schema:
+            example: -73
+            type: number
+        - name: limit
+          required: false
+          in: query
+          description: Limit results (1-1000)
+          schema:
+            example: 100
+            type: number
+      responses:
+        '200':
+          description: Users returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+  /user/{userId}:
+    get:
+      operationId: UserController_findOne
+      summary: Get a user by ID
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+    patch:
+      operationId: UserController_update
+      summary: Update a user
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDto'
+      responses:
+        '200':
+          description: Updated user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutateUserResponseDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+    delete:
+      operationId: UserController_remove
+      summary: Delete a user
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted
+      tags:
+        - user
+      security:
+        - api_key: []
+  /user/{userId}/friends/{friendUserId}:
+    put:
+      operationId: UserController_addFriend
+      summary: Add a friend to a user
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: friendUserId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Friend added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityConnectionDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+    delete:
+      operationId: UserController_removeFriend
+      summary: Remove a friend from a user
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: friendUserId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Friend removed
+      tags:
+        - user
+      security:
+        - api_key: []
+  /user/{userId}/friends:
+    get:
+      operationId: UserController_getFriends
+      summary: Get friends of a user
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Friends returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserEntityConnectionDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+  /user/batch:
+    post:
+      operationId: UserController_getBatch
+      summary: Get a batch of users by IDs
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetUsersDto'
+      responses:
+        '200':
+          description: Users returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+  /user/{userId}/groups:
+    get:
+      operationId: UserController_getGroups
+      summary: Get groups of a user
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Groups returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupEntityConnectionDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+  /user/{userId}/events:
+    get:
+      operationId: UserController_getEvents
+      summary: Get events of a user
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Events returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventEntityConnectionDto'
+      tags:
+        - user
+      security:
+        - api_key: []
+  /event:
+    post:
+      operationId: EventController_create
+      summary: Create an event
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventDto'
+      responses:
+        '201':
+          description: Created event ID
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - event
+      security:
+        - bearer: []
+    get:
+      operationId: EventController_search
+      summary: Search events
+      parameters:
+        - name: displayName
+          required: false
+          in: query
+          description: Display name search (ILIKE)
+          schema:
+            example: Keyword
+            type: string
+        - name: latitude
+          required: false
+          in: query
+          description: Latitude for radius search
+          schema:
+            example: 40.7128
+            type: number
+        - name: longitude
+          required: false
+          in: query
+          description: Longitude for radius search
+          schema:
+            example: -74.006
+            type: number
+        - name: radius
+          required: false
+          in: query
+          description: Radius in meters for radius search
+          schema:
+            example: 5000
+            type: number
+        - name: minLatitude
+          required: false
+          in: query
+          description: Minimum latitude for bounding box
+          schema:
+            example: 40
+            type: number
+        - name: maxLatitude
+          required: false
+          in: query
+          description: Maximum latitude for bounding box
+          schema:
+            example: 41
+            type: number
+        - name: minLongitude
+          required: false
+          in: query
+          description: Minimum longitude for bounding box
+          schema:
+            example: -75
+            type: number
+        - name: maxLongitude
+          required: false
+          in: query
+          description: Maximum longitude for bounding box
+          schema:
+            example: -73
+            type: number
+        - name: limit
+          required: false
+          in: query
+          description: Limit results (1-1000)
+          schema:
+            example: 100
+            type: number
+      responses:
+        '200':
+          description: Events returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDto'
+      tags:
+        - event
+      security:
+        - bearer: []
+  /event/{eventId}:
+    get:
+      operationId: EventController_findOne
+      summary: Get an event by ID
+      parameters:
+        - name: eventId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDto'
+      tags:
+        - event
+      security:
+        - bearer: []
+    put:
+      operationId: EventController_update
+      summary: Update an event
+      parameters:
+        - name: eventId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventDto'
+      responses:
+        '200':
+          description: Updated event ID
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - event
+      security:
+        - bearer: []
+    delete:
+      operationId: EventController_remove
+      summary: Delete an event
+      parameters:
+        - name: eventId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: Requester user ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Event deleted
+      tags:
+        - event
+      security:
+        - bearer: []
+  /event/{eventId}/attendees/{userId}:
+    put:
+      operationId: EventController_addAttendee
+      summary: Add an attendee to an event
+      parameters:
+        - name: eventId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attendee added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityConnectionDto'
+      tags:
+        - event
+      security:
+        - bearer: []
+  /event/{eventId}/attendees:
+    get:
+      operationId: EventController_getAttendees
+      summary: Get attendees of an event
+      parameters:
+        - name: eventId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attendees returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserEntityConnectionDto'
+      tags:
+        - event
+      security:
+        - bearer: []
+  /event/batch:
+    post:
+      operationId: EventController_getBatch
+      summary: Get a batch of events by IDs
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetEventsDto'
+      responses:
+        '200':
+          description: Events returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDto'
+      tags:
+        - event
+      security:
+        - bearer: []
+  /group:
+    post:
+      operationId: GroupController_create
+      summary: Create a group
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupDto'
+      responses:
+        '201':
+          description: Created group ID
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - group
+      security:
+        - bearer: []
+    get:
+      operationId: GroupController_search
+      summary: Search groups
+      parameters:
+        - name: displayName
+          required: false
+          in: query
+          description: Display name search (ILIKE)
+          schema:
+            example: Keyword
+            type: string
+        - name: latitude
+          required: false
+          in: query
+          description: Latitude for radius search
+          schema:
+            example: 40.7128
+            type: number
+        - name: longitude
+          required: false
+          in: query
+          description: Longitude for radius search
+          schema:
+            example: -74.006
+            type: number
+        - name: radius
+          required: false
+          in: query
+          description: Radius in meters for radius search
+          schema:
+            example: 5000
+            type: number
+        - name: minLatitude
+          required: false
+          in: query
+          description: Minimum latitude for bounding box
+          schema:
+            example: 40
+            type: number
+        - name: maxLatitude
+          required: false
+          in: query
+          description: Maximum latitude for bounding box
+          schema:
+            example: 41
+            type: number
+        - name: minLongitude
+          required: false
+          in: query
+          description: Minimum longitude for bounding box
+          schema:
+            example: -75
+            type: number
+        - name: maxLongitude
+          required: false
+          in: query
+          description: Maximum longitude for bounding box
+          schema:
+            example: -73
+            type: number
+        - name: limit
+          required: false
+          in: query
+          description: Limit results (1-1000)
+          schema:
+            example: 100
+            type: number
+      responses:
+        '200':
+          description: Groups returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupDto'
+      tags:
+        - group
+      security:
+        - bearer: []
+  /group/{groupId}:
+    get:
+      operationId: GroupController_findOne
+      summary: Get a group by ID
+      parameters:
+        - name: groupId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Group returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDto'
+      tags:
+        - group
+      security:
+        - bearer: []
+    patch:
+      operationId: GroupController_update
+      summary: Update a group
+      parameters:
+        - name: groupId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupDto'
+      responses:
+        '200':
+          description: Updated group ID
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - group
+      security:
+        - bearer: []
+    delete:
+      operationId: GroupController_remove
+      summary: Delete a group
+      parameters:
+        - name: groupId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: Requester user ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Group deleted
+      tags:
+        - group
+      security:
+        - bearer: []
+  /group/{groupId}/members/{userId}:
+    put:
+      operationId: GroupController_addMember
+      summary: Add a member to a group
+      parameters:
+        - name: groupId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityConnectionDto'
+      tags:
+        - group
+      security:
+        - bearer: []
+    delete:
+      operationId: GroupController_removeMember
+      summary: Remove a member from a group
+      parameters:
+        - name: groupId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Member removed
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - group
+      security:
+        - bearer: []
+  /group/{groupId}/members:
+    get:
+      operationId: GroupController_getMembers
+      summary: Get members of a group
+      parameters:
+        - name: groupId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Members returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserEntityConnectionDto'
+      tags:
+        - group
+      security:
+        - bearer: []
+  /group/{groupId}/events:
+    get:
+      operationId: GroupController_getEvents
+      summary: Get events of a group
+      parameters:
+        - name: groupId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Events returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventEntityConnectionDto'
+      tags:
+        - group
+      security:
+        - bearer: []
+  /group/batch:
+    post:
+      operationId: GroupController_getBatch
+      summary: Get a batch of groups by IDs
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetGroupsDto'
+      responses:
+        '200':
+          description: Groups returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupDto'
+      tags:
+        - group
+      security:
+        - bearer: []
+info:
+  title: proxima-nexus-data-plane-api
+  description: Proxima Nexus Data Plane API
+  version: 1.0.0
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: X-Proxima-Nexus-Api-Key
+  schemas:
+    LocationDto:
+      type: object
+      properties:
+        latitude:
+          type: number
+          description: Latitude in decimal degrees
+          example: 40.7128
+        longitude:
+          type: number
+          description: Longitude in decimal degrees
+          example: -74.006
+        name:
+          type: string
+          description: Human-readable location name
+          example: New York, NY
+    CreateUserDto:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        requesterUserId:
+          type: string
+          description: User ID of the requester
+          example: user-123
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        userId:
+          type: string
+          description: Unique user identifier
+          example: user-123
+        gender:
+          type: string
+          description: Gender
+          example: female
+        birthDate:
+          type: string
+          description: Birth date (ISO 8601)
+          example: '1990-01-01'
+      required:
+        - displayName
+        - requesterUserId
+        - visibility
+        - userId
+        - gender
+        - birthDate
+    MutateUserResponseDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: User ID
+          example: user-123
+      required:
+        - userId
+    UserDto:
+      type: object
+      properties:
+        entityId:
+          type: string
+          description: Unique identifier for the entity
+          example: entity-123
+        tenantId:
+          type: string
+          description: Tenant identifier the entity belongs to
+          example: tenant-abc
+        displayName:
+          type: string
+          description: Display name of the entity
+          example: Sample Entity
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
+        description:
+          type: string
+          description: Description of the entity
+          example: A description of the entity
+        tags:
+          description: Tags associated with the entity
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          description: Date/time the entity was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the entity was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        location:
+          description: Required location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        gender:
+          type: string
+          description: Gender
+          example: female
+        birthDate:
+          type: string
+          description: Birth date (ISO 8601)
+          example: '1990-01-01'
+      required:
+        - gender
+        - birthDate
+    UpdateUserDto:
+      type: object
+      properties:
+        requesterUserId:
+          type: string
+          description: User ID of the requester
+          example: user-123
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        gender:
+          type: string
+          description: Gender
+          example: female
+        birthDate:
+          type: string
+          description: Birth date (ISO 8601)
+          example: '1990-01-01'
+      required:
+        - requesterUserId
+        - displayName
+        - gender
+        - birthDate
+    EntityConnectionDto:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: Date/time the connection was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the connection was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - requested
+            - active
+            - rejected
+      required:
+        - state
+    UserEntityConnectionDto:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: Date/time the connection was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the connection was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - requested
+            - active
+            - rejected
+        userId:
+          type: string
+          description: User ID
+          example: user-123
+      required:
+        - state
+        - userId
+    GetUsersDto:
+      type: object
+      properties:
+        userIds:
+          description: The IDs of the users
+          example:
+            - 123e4567-e89b-12d3-a456-426614174000
+            - 123e4567-e89b-12d3-a456-426614174001
+          type: array
+          items:
+            type: string
+      required:
+        - userIds
+    GroupEntityConnectionDto:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: Date/time the connection was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the connection was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - requested
+            - active
+            - rejected
+        groupId:
+          type: string
+          description: Group ID
+          example: group-123
+      required:
+        - state
+        - groupId
+    EventEntityConnectionDto:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: Date/time the connection was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the connection was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - requested
+            - active
+            - rejected
+        eventId:
+          type: string
+          description: Event ID
+          example: event-123
+      required:
+        - state
+        - eventId
+    CreateEventDto:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        requesterUserId:
+          type: string
+          description: User ID of the requester
+          example: user-123
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        eventId:
+          type: string
+          description: Unique event identifier
+          example: event-123
+        startTime:
+          type: string
+          description: Start time (ISO 8601)
+          example: '2024-07-15T18:00:00Z'
+        endTime:
+          type: string
+          description: End time (ISO 8601)
+          example: '2024-07-15T22:00:00Z'
+        type:
+          type: string
+          description: Event type
+          example: concert
+        associatedGroupId:
+          type: string
+          description: Identifier of associated group which owns the event. Owners/admins of the group will be admins of the event.
+          example: group-123
+      required:
+        - displayName
+        - requesterUserId
+        - visibility
+        - eventId
+        - startTime
+        - endTime
+        - type
+    EventDto:
+      type: object
+      properties:
+        entityId:
+          type: string
+          description: Unique identifier for the entity
+          example: entity-123
+        tenantId:
+          type: string
+          description: Tenant identifier the entity belongs to
+          example: tenant-abc
+        displayName:
+          type: string
+          description: Display name of the entity
+          example: Sample Entity
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
+        description:
+          type: string
+          description: Description of the entity
+          example: A description of the entity
+        tags:
+          description: Tags associated with the entity
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          description: Date/time the entity was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the entity was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        location:
+          description: Required location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        startTime:
+          type: string
+          description: Start time (ISO 8601)
+          example: '2024-07-15T18:00:00Z'
+        endTime:
+          type: string
+          description: End time (ISO 8601)
+          example: '2024-07-15T22:00:00Z'
+        type:
+          type: string
+          description: Event type
+          example: concert
+        associatedGroupId:
+          type: string
+          description: Identifier of associated group which owns the event. Owners/admins of the group will be admins of the event.
+          example: group-123
+      required:
+        - startTime
+        - endTime
+        - type
+    UpdateEventDto:
+      type: object
+      properties:
+        requesterUserId:
+          type: string
+          description: User ID of the requester
+          example: user-123
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        startTime:
+          type: string
+          description: Start time (ISO 8601)
+          example: '2024-07-15T18:00:00Z'
+        endTime:
+          type: string
+          description: End time (ISO 8601)
+          example: '2024-07-15T22:00:00Z'
+        type:
+          type: string
+          description: Event type
+          example: concert
+      required:
+        - requesterUserId
+        - displayName
+        - startTime
+        - endTime
+        - type
+    GetEventsDto:
+      type: object
+      properties:
+        eventIds:
+          description: The IDs of the events
+          example:
+            - 123e4567-e89b-12d3-a456-426614174000
+            - 123e4567-e89b-12d3-a456-426614174001
+          type: array
+          items:
+            type: string
+      required:
+        - eventIds
+    CreateGroupDto:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        requesterUserId:
+          type: string
+          description: User ID of the requester
+          example: user-123
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        groupId:
+          type: string
+          description: Unique group identifier
+          example: group-123
+        type:
+          type: string
+          description: Group type
+          example: club
+      required:
+        - displayName
+        - requesterUserId
+        - visibility
+        - groupId
+        - type
+    GroupDto:
+      type: object
+      properties:
+        entityId:
+          type: string
+          description: Unique identifier for the entity
+          example: entity-123
+        tenantId:
+          type: string
+          description: Tenant identifier the entity belongs to
+          example: tenant-abc
+        displayName:
+          type: string
+          description: Display name of the entity
+          example: Sample Entity
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
+        description:
+          type: string
+          description: Description of the entity
+          example: A description of the entity
+        tags:
+          description: Tags associated with the entity
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          description: Date/time the entity was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the entity was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        location:
+          description: Required location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        type:
+          type: string
+          description: Group type
+          example: club
+      required:
+        - type
+    UpdateGroupDto:
+      type: object
+      properties:
+        requesterUserId:
+          type: string
+          description: User ID of the requester
+          example: user-123
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          description: Group type
+          example: club
+      required:
+        - requesterUserId
+        - displayName
+        - type
+    GetGroupsDto:
+      type: object
+      properties:
+        groupIds:
+          description: The IDs of the groups
+          example:
+            - 123e4567-e89b-12d3-a456-426614174000
+            - 123e4567-e89b-12d3-a456-426614174001
+          type: array
+          items:
+            type: string
+      required:
+        - groupIds
