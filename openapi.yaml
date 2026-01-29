@@ -25,6 +25,10 @@ paths:
     get:
       operationId: UserController_search
       summary: Search users
+      description: >-
+        Search for users. When requesterUserId is provided, HIDDEN users are filtered out unless the requester is
+        connected to them, and users who have blocked the requester are also filtered out. When requesterUserId is not
+        provided, all users are returned without visibility filtering.
       parameters:
         - name: displayName
           required: false
@@ -89,6 +93,14 @@ paths:
           schema:
             example: 100
             type: number
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user searching for users. If set, users will be filtered to only include users that the user can
+            see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Users returned
@@ -104,12 +116,20 @@ paths:
         - api_key: []
   /user/{userId}:
     get:
-      operationId: UserController_findOne
+      operationId: UserController_get
       summary: Get a user by ID
       parameters:
         - name: userId
           required: true
           in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting a user by ID. If set, 401 may be returned if the user cannot view the user, otherwise
+            requesterConnection will be set on the result.
+          required: false
           schema:
             type: string
       responses:
@@ -130,6 +150,12 @@ paths:
         - name: userId
           required: true
           in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user updating the user
+          required: true
           schema:
             type: string
       requestBody:
@@ -158,6 +184,12 @@ paths:
           in: path
           schema:
             type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user deleting the user
+          required: true
+          schema:
+            type: string
       responses:
         '204':
           description: User deleted
@@ -165,24 +197,40 @@ paths:
         - user
       security:
         - api_key: []
-  /user/{userId}/friends/{friendUserId}:
+  /user/{userId}/connections/{targetUserId}:
     put:
-      operationId: UserController_addFriend
-      summary: Add a friend to a user
+      operationId: UserController_putConnection
+      summary: Create or update a connection with another user
+      description: >-
+        Create a friend request, accept a pending request, or block a user. For FRIEND type: creates REQUESTED state if
+        no connection exists; target user can accept by setting state to ACTIVE. For BLOCKED type: creates a mutual
+        block.
       parameters:
         - name: userId
           required: true
           in: path
           schema:
             type: string
-        - name: friendUserId
+        - name: targetUserId
           required: true
           in: path
           schema:
             type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user creating/modifying the connection (must match userId)
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutateUserConnectionDto'
       responses:
         '200':
-          description: Friend added
+          description: Connection created or updated
           content:
             application/json:
               schema:
@@ -192,39 +240,95 @@ paths:
       security:
         - api_key: []
     delete:
-      operationId: UserController_removeFriend
-      summary: Remove a friend from a user
+      operationId: UserController_deleteConnection
+      summary: Delete a connection with another user
+      description: >-
+        Remove a friend connection or unblock a user. For BLOCKED connections, only the user who initiated the block can
+        unblock.
       parameters:
         - name: userId
           required: true
           in: path
           schema:
             type: string
-        - name: friendUserId
+        - name: targetUserId
           required: true
           in: path
           schema:
             type: string
+        - name: type
+          required: true
+          in: query
+          description: Type of connection to delete
+          schema:
+            enum:
+              - friend
+              - blocked
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user deleting the connection
+          required: true
+          schema:
+            type: string
       responses:
-        '200':
-          description: Friend removed
+        '204':
+          description: Connection deleted
       tags:
         - user
       security:
         - api_key: []
-  /user/{userId}/friends:
+  /user/{userId}/connections:
     get:
-      operationId: UserController_getFriends
-      summary: Get friends of a user
+      operationId: UserController_getConnections
+      summary: Get connections of a user
+      description: >-
+        Get user connections with optional type and state filters. Visibility rules apply: HIDDEN/CONNECTIONS users only
+        show connections to self or connected users. Only the user themselves can see BLOCKED connections or non-ACTIVE
+        states.
       parameters:
         - name: userId
           required: true
           in: path
           schema:
             type: string
+        - name: state
+          required: false
+          in: query
+          description: Filter connections by state. Can be multiple values. Non-self requesters can only see ACTIVE connections.
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - requested
+                - active
+                - rejected
+                - blocked
+        - name: type
+          required: false
+          in: query
+          description: Filter connections by type. Can be multiple values.
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - friend
+                - blocked
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user viewing connections. Required for non-PUBLIC users. Only the user themselves can view BLOCKED
+            or non-ACTIVE connections.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
-          description: Friends returned
+          description: Connections returned
           content:
             application/json:
               schema:
@@ -239,7 +343,15 @@ paths:
     post:
       operationId: UserController_getBatch
       summary: Get a batch of users by IDs
-      parameters: []
+      parameters:
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting a batch of users. If set, users will be filtered to only include users that the user
+            can see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -269,6 +381,14 @@ paths:
           in: path
           schema:
             type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting groups of a user. If set, groups will be filtered to only include groups that the
+            user can see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Groups returned
@@ -292,6 +412,14 @@ paths:
           in: path
           schema:
             type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting events of a user. If set, events will be filtered to only include events that the
+            user can see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Events returned
@@ -308,8 +436,14 @@ paths:
   /event:
     post:
       operationId: EventController_create
-      summary: Create an event
-      parameters: []
+      summary: Create an event. Owner will be the user creating the event or the group associated with the event (if set)
+      parameters:
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user creating the event
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -323,10 +457,14 @@ paths:
             application/json:
               schema:
                 type: string
+        '400':
+          description: Requester user not found, or associated group not found
+        '401':
+          description: User cannot create events for the associated group
       tags:
         - event
       security:
-        - bearer: []
+        - api_key: []
     get:
       operationId: EventController_search
       summary: Search events
@@ -394,6 +532,14 @@ paths:
           schema:
             example: 100
             type: number
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user searching for events. If set, events will be filtered to only include events that the user
+            can see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Events returned
@@ -406,15 +552,23 @@ paths:
       tags:
         - event
       security:
-        - bearer: []
+        - api_key: []
   /event/{eventId}:
     get:
-      operationId: EventController_findOne
+      operationId: EventController_get
       summary: Get an event by ID
       parameters:
         - name: eventId
           required: true
           in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user searching for events. If set, 401 may be returned if the user cannot view the event,
+            otherwise requesterConnection will be set on the result.
+          required: false
           schema:
             type: string
       responses:
@@ -427,7 +581,7 @@ paths:
       tags:
         - event
       security:
-        - bearer: []
+        - api_key: []
     put:
       operationId: EventController_update
       summary: Update an event
@@ -435,6 +589,12 @@ paths:
         - name: eventId
           required: true
           in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user updating the event
+          required: true
           schema:
             type: string
       requestBody:
@@ -453,7 +613,7 @@ paths:
       tags:
         - event
       security:
-        - bearer: []
+        - api_key: []
     delete:
       operationId: EventController_remove
       summary: Delete an event
@@ -465,7 +625,7 @@ paths:
             type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
-          description: Requester user ID
+          description: ID of the user deleting the event
           required: true
           schema:
             type: string
@@ -475,10 +635,10 @@ paths:
       tags:
         - event
       security:
-        - bearer: []
-  /event/{eventId}/attendees/{userId}:
+        - api_key: []
+  /event/{eventId}/connection/{userId}:
     put:
-      operationId: EventController_addAttendee
+      operationId: EventController_addConnection
       summary: Add an attendee to an event
       parameters:
         - name: eventId
@@ -491,6 +651,18 @@ paths:
           in: path
           schema:
             type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user removing an attendee from the event
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutateEventEntityConnectionDto'
       responses:
         '200':
           description: Attendee added
@@ -501,20 +673,74 @@ paths:
       tags:
         - event
       security:
-        - bearer: []
-  /event/{eventId}/attendees:
-    get:
-      operationId: EventController_getAttendees
-      summary: Get attendees of an event
+        - api_key: []
+    delete:
+      operationId: EventController_removeConnection
+      summary: Remove an attendee from an event
       parameters:
         - name: eventId
           required: true
           in: path
           schema:
             type: string
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user removing an attendee from the event
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutateEventEntityConnectionDto'
+      responses:
+        '204':
+          description: Attendee removed
+      tags:
+        - event
+      security:
+        - api_key: []
+  /event/{eventId}/connections:
+    get:
+      operationId: EventController_getConnections
+      summary: Get connections of an event
+      parameters:
+        - name: eventId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: type
+          required: false
+          in: query
+          description: Filter connections by type. Can be a single type or multiple types (comma-separated or array)
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - attendee
+                - admin
+                - owner
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting connections of the event. If set, 401 may be returned if the user cannot view the
+            event connections.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
-          description: Attendees returned
+          description: Connections returned
           content:
             application/json:
               schema:
@@ -524,12 +750,20 @@ paths:
       tags:
         - event
       security:
-        - bearer: []
+        - api_key: []
   /event/batch:
     post:
       operationId: EventController_getBatch
       summary: Get a batch of events by IDs
-      parameters: []
+      parameters:
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting a batch of events. If set, events will be filtered to only include events that the
+            user can see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -548,12 +782,18 @@ paths:
       tags:
         - event
       security:
-        - bearer: []
+        - api_key: []
   /group:
     post:
       operationId: GroupController_create
       summary: Create a group
-      parameters: []
+      parameters:
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user creating the group
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -570,7 +810,7 @@ paths:
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
     get:
       operationId: GroupController_search
       summary: Search groups
@@ -638,6 +878,14 @@ paths:
           schema:
             example: 100
             type: number
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user searching for groups. If set, groups will be filtered to only include groups that the user
+            can see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Groups returned
@@ -650,15 +898,23 @@ paths:
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
   /group/{groupId}:
     get:
-      operationId: GroupController_findOne
+      operationId: GroupController_get
       summary: Get a group by ID
       parameters:
         - name: groupId
           required: true
           in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting a group by ID. If set, 401 may be returned if the user cannot view the group,
+            otherwise requesterConnection will be set on the result.
+          required: false
           schema:
             type: string
       responses:
@@ -668,10 +924,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GroupDto'
+        '401':
+          description: User cannot view this group
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
     patch:
       operationId: GroupController_update
       summary: Update a group
@@ -679,6 +937,12 @@ paths:
         - name: groupId
           required: true
           in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user updating the group
+          required: true
           schema:
             type: string
       requestBody:
@@ -697,7 +961,7 @@ paths:
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
     delete:
       operationId: GroupController_remove
       summary: Delete a group
@@ -709,7 +973,7 @@ paths:
             type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
-          description: Requester user ID
+          description: ID of the user deleting the group
           required: true
           schema:
             type: string
@@ -719,11 +983,11 @@ paths:
       tags:
         - group
       security:
-        - bearer: []
-  /group/{groupId}/members/{userId}:
+        - api_key: []
+  /group/{groupId}/connection/{userId}:
     put:
-      operationId: GroupController_addMember
-      summary: Add a member to a group
+      operationId: GroupController_addConnection
+      summary: Add or update a connection to a group (member, admin, or owner)
       parameters:
         - name: groupId
           required: true
@@ -735,20 +999,34 @@ paths:
           in: path
           schema:
             type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user adding a connection to the group
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutateGroupEntityConnectionDto'
       responses:
         '200':
-          description: Member added
+          description: Connection added/updated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EntityConnectionDto'
+        '401':
+          description: User cannot add this connection
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
     delete:
-      operationId: GroupController_removeMember
-      summary: Remove a member from a group
+      operationId: GroupController_removeConnection
+      summary: Remove a connection from a group
       parameters:
         - name: groupId
           required: true
@@ -760,40 +1038,87 @@ paths:
           in: path
           schema:
             type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user removing a connection from the group
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutateGroupEntityConnectionDto'
       responses:
-        '200':
-          description: Member removed
-          content:
-            application/json:
-              schema:
-                type: string
+        '204':
+          description: Connection removed
+        '401':
+          description: User cannot remove this connection
       tags:
         - group
       security:
-        - bearer: []
-  /group/{groupId}/members:
+        - api_key: []
+  /group/{groupId}/connections:
     get:
-      operationId: GroupController_getMembers
-      summary: Get members of a group
+      operationId: GroupController_getConnections
+      summary: Get connections of a group
       parameters:
         - name: groupId
           required: true
           in: path
           schema:
             type: string
+        - name: state
+          required: false
+          in: query
+          description: Filter connections by state (e.g., requested for pending approvals)
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - requested
+                - active
+                - rejected
+                - blocked
+        - name: type
+          required: false
+          in: query
+          description: Filter connections by type. Can be a single type or multiple types (comma-separated or array)
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - member
+                - admin
+                - owner
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting connections of the group. If set, 401 may be returned if the user cannot view the
+            group connections.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
-          description: Members returned
+          description: Connections returned
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/UserEntityConnectionDto'
+        '401':
+          description: User cannot view connections of this group
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
   /group/{groupId}/events:
     get:
       operationId: GroupController_getEvents
@@ -802,6 +1127,14 @@ paths:
         - name: groupId
           required: true
           in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting events of the group. If set, events will be filtered to only include events that the
+            user can see, and requesterConnection will be set on the results.
+          required: false
           schema:
             type: string
       responses:
@@ -816,12 +1149,20 @@ paths:
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
   /group/batch:
     post:
       operationId: GroupController_getBatch
       summary: Get a batch of groups by IDs
-      parameters: []
+      parameters:
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: >-
+            ID of the user getting a batch of groups. If set, groups will be filtered to only include groups that the
+            user can see, and requesterConnection will be set on the results.
+          required: false
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -840,7 +1181,7 @@ paths:
       tags:
         - group
       security:
-        - bearer: []
+        - api_key: []
 info:
   title: proxima-nexus-data-plane-api
   description: Proxima Nexus Data Plane API
@@ -877,10 +1218,6 @@ components:
           type: string
           description: Display name
           example: Display Name
-        requesterUserId:
-          type: string
-          description: User ID of the requester
-          example: user-123
         visibility:
           type: string
           description: Visibility of the entity
@@ -919,7 +1256,6 @@ components:
           example: '1990-01-01'
       required:
         - displayName
-        - requesterUserId
         - visibility
         - userId
         - gender
@@ -933,6 +1269,41 @@ components:
           example: user-123
       required:
         - userId
+    EntityConnectionDto:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: Date/time the connection was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the connection was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - requested
+            - active
+            - rejected
+            - blocked
+        type:
+          type: string
+          description: Connection type
+          enum:
+            - attendee
+            - admin
+            - owner
+            - member
+            - admin
+            - owner
+            - friend
+            - blocked
+            - none
+      required:
+        - state
+        - type
     UserDto:
       type: object
       properties:
@@ -940,10 +1311,6 @@ components:
           type: string
           description: Unique identifier for the entity
           example: entity-123
-        tenantId:
-          type: string
-          description: Tenant identifier the entity belongs to
-          example: tenant-abc
         displayName:
           type: string
           description: Display name of the entity
@@ -979,6 +1346,10 @@ components:
           description: Required location information
           allOf:
             - $ref: '#/components/schemas/LocationDto'
+        requesterConnection:
+          description: Connection to the requester
+          allOf:
+            - $ref: '#/components/schemas/EntityConnectionDto'
         gender:
           type: string
           description: Gender
@@ -993,10 +1364,6 @@ components:
     UpdateUserDto:
       type: object
       properties:
-        requesterUserId:
-          type: string
-          description: User ID of the requester
-          example: user-123
         visibility:
           type: string
           description: Visibility of the entity
@@ -1034,30 +1401,21 @@ components:
           description: Birth date (ISO 8601)
           example: '1990-01-01'
       required:
-        - requesterUserId
         - displayName
         - gender
         - birthDate
-    EntityConnectionDto:
+    MutateUserConnectionDto:
       type: object
       properties:
-        createdAt:
+        type:
           type: string
-          description: Date/time the connection was created (ISO string)
-          example: '2024-05-01T12:34:56.789Z'
-        updatedAt:
-          type: string
-          description: Date/time the connection was last updated (ISO string)
-          example: '2024-05-02T12:34:56.789Z'
-        state:
-          type: string
-          description: Connection state
+          description: Type of connection to create or modify
           enum:
-            - requested
-            - active
-            - rejected
+            - friend
+            - blocked
+          example: friend
       required:
-        - state
+        - type
     UserEntityConnectionDto:
       type: object
       properties:
@@ -1076,12 +1434,27 @@ components:
             - requested
             - active
             - rejected
+            - blocked
+        type:
+          type: string
+          description: Connection type
+          enum:
+            - attendee
+            - admin
+            - owner
+            - member
+            - admin
+            - owner
+            - friend
+            - blocked
+            - none
         userId:
           type: string
           description: User ID
           example: user-123
       required:
         - state
+        - type
         - userId
     GetUsersDto:
       type: object
@@ -1114,12 +1487,27 @@ components:
             - requested
             - active
             - rejected
+            - blocked
+        type:
+          type: string
+          description: Connection type
+          enum:
+            - attendee
+            - admin
+            - owner
+            - member
+            - admin
+            - owner
+            - friend
+            - blocked
+            - none
         groupId:
           type: string
           description: Group ID
           example: group-123
       required:
         - state
+        - type
         - groupId
     EventEntityConnectionDto:
       type: object
@@ -1139,12 +1527,27 @@ components:
             - requested
             - active
             - rejected
+            - blocked
+        type:
+          type: string
+          description: Connection type
+          enum:
+            - attendee
+            - admin
+            - owner
+            - member
+            - admin
+            - owner
+            - friend
+            - blocked
+            - none
         eventId:
           type: string
           description: Event ID
           example: event-123
       required:
         - state
+        - type
         - eventId
     CreateEventDto:
       type: object
@@ -1153,10 +1556,6 @@ components:
           type: string
           description: Display name
           example: Display Name
-        requesterUserId:
-          type: string
-          description: User ID of the requester
-          example: user-123
         visibility:
           type: string
           description: Visibility of the entity
@@ -1201,9 +1600,12 @@ components:
           type: string
           description: Identifier of associated group which owns the event. Owners/admins of the group will be admins of the event.
           example: group-123
+        maxNumAttendees:
+          type: number
+          description: Maximum number of attendees allowed (null = unlimited)
+          example: 100
       required:
         - displayName
-        - requesterUserId
         - visibility
         - eventId
         - startTime
@@ -1216,10 +1618,6 @@ components:
           type: string
           description: Unique identifier for the entity
           example: entity-123
-        tenantId:
-          type: string
-          description: Tenant identifier the entity belongs to
-          example: tenant-abc
         displayName:
           type: string
           description: Display name of the entity
@@ -1255,6 +1653,10 @@ components:
           description: Required location information
           allOf:
             - $ref: '#/components/schemas/LocationDto'
+        requesterConnection:
+          description: Connection to the requester
+          allOf:
+            - $ref: '#/components/schemas/EntityConnectionDto'
         startTime:
           type: string
           description: Start time (ISO 8601)
@@ -1271,6 +1673,14 @@ components:
           type: string
           description: Identifier of associated group which owns the event. Owners/admins of the group will be admins of the event.
           example: group-123
+        numAttendees:
+          type: number
+          description: Number of active attendees
+          example: 42
+        maxNumAttendees:
+          type: number
+          description: Maximum number of attendees allowed (null = unlimited)
+          example: 100
       required:
         - startTime
         - endTime
@@ -1278,10 +1688,6 @@ components:
     UpdateEventDto:
       type: object
       properties:
-        requesterUserId:
-          type: string
-          description: User ID of the requester
-          example: user-123
         visibility:
           type: string
           description: Visibility of the entity
@@ -1322,11 +1728,26 @@ components:
           type: string
           description: Event type
           example: concert
+        maxNumAttendees:
+          type: number
+          description: Maximum number of attendees allowed (null = unlimited)
+          example: 100
       required:
-        - requesterUserId
         - displayName
         - startTime
         - endTime
+        - type
+    MutateEventEntityConnectionDto:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Connection type
+          enum:
+            - attendee
+            - admin
+            - owner
+      required:
         - type
     GetEventsDto:
       type: object
@@ -1348,10 +1769,6 @@ components:
           type: string
           description: Display name
           example: Display Name
-        requesterUserId:
-          type: string
-          description: User ID of the requester
-          example: user-123
         visibility:
           type: string
           description: Visibility of the entity
@@ -1383,10 +1800,13 @@ components:
         type:
           type: string
           description: Group type
-          example: club
+          enum:
+            - open
+            - request
+            - invite
+          example: open
       required:
         - displayName
-        - requesterUserId
         - visibility
         - groupId
         - type
@@ -1397,10 +1817,6 @@ components:
           type: string
           description: Unique identifier for the entity
           example: entity-123
-        tenantId:
-          type: string
-          description: Tenant identifier the entity belongs to
-          example: tenant-abc
         displayName:
           type: string
           description: Display name of the entity
@@ -1436,19 +1852,27 @@ components:
           description: Required location information
           allOf:
             - $ref: '#/components/schemas/LocationDto'
+        requesterConnection:
+          description: Connection to the requester
+          allOf:
+            - $ref: '#/components/schemas/EntityConnectionDto'
         type:
           type: string
           description: Group type
-          example: club
+          enum:
+            - open
+            - request
+            - invite
+          example: open
+        numMembers:
+          type: number
+          description: Number of active members
+          example: 150
       required:
         - type
     UpdateGroupDto:
       type: object
       properties:
-        requesterUserId:
-          type: string
-          description: User ID of the requester
-          example: user-123
         visibility:
           type: string
           description: Visibility of the entity
@@ -1480,10 +1904,25 @@ components:
         type:
           type: string
           description: Group type
-          example: club
+          enum:
+            - open
+            - request
+            - invite
+          example: open
       required:
-        - requesterUserId
         - displayName
+        - type
+    MutateGroupEntityConnectionDto:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Connection type
+          enum:
+            - member
+            - admin
+            - owner
+      required:
         - type
     GetGroupsDto:
       type: object

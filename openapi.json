@@ -40,6 +40,7 @@
       "get": {
         "operationId": "UserController_search",
         "summary": "Search users",
+        "description": "Search for users. When requesterUserId is provided, HIDDEN users are filtered out unless the requester is connected to them, and users who have blocked the requester are also filtered out. When requesterUserId is not provided, all users are returned without visibility filtering.",
         "parameters": [
           {
             "name": "displayName",
@@ -130,6 +131,15 @@
               "example": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user searching for users. If set, users will be filtered to only include users that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -159,13 +169,22 @@
     },
     "/user/{userId}": {
       "get": {
-        "operationId": "UserController_findOne",
+        "operationId": "UserController_get",
         "summary": "Get a user by ID",
         "parameters": [
           {
             "name": "userId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting a user by ID. If set, 401 may be returned if the user cannot view the user, otherwise requesterConnection will be set on the result.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -200,6 +219,15 @@
             "name": "userId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user updating the user",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -247,6 +275,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user deleting the user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -264,10 +301,11 @@
         ]
       }
     },
-    "/user/{userId}/friends/{friendUserId}": {
+    "/user/{userId}/connections/{targetUserId}": {
       "put": {
-        "operationId": "UserController_addFriend",
-        "summary": "Add a friend to a user",
+        "operationId": "UserController_putConnection",
+        "summary": "Create or update a connection with another user",
+        "description": "Create a friend request, accept a pending request, or block a user. For FRIEND type: creates REQUESTED state if no connection exists; target user can accept by setting state to ACTIVE. For BLOCKED type: creates a mutual block.",
         "parameters": [
           {
             "name": "userId",
@@ -278,17 +316,36 @@
             }
           },
           {
-            "name": "friendUserId",
+            "name": "targetUserId",
             "required": true,
             "in": "path",
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user creating/modifying the connection (must match userId)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MutateUserConnectionDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Friend added",
+            "description": "Connection created or updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -308,8 +365,9 @@
         ]
       },
       "delete": {
-        "operationId": "UserController_removeFriend",
-        "summary": "Remove a friend from a user",
+        "operationId": "UserController_deleteConnection",
+        "summary": "Delete a connection with another user",
+        "description": "Remove a friend connection or unblock a user. For BLOCKED connections, only the user who initiated the block can unblock.",
         "parameters": [
           {
             "name": "userId",
@@ -320,17 +378,39 @@
             }
           },
           {
-            "name": "friendUserId",
+            "name": "targetUserId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "description": "Type of connection to delete",
+            "schema": {
+              "enum": [
+                "friend",
+                "blocked"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user deleting the connection",
+            "required": true,
             "schema": {
               "type": "string"
             }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Friend removed"
+          "204": {
+            "description": "Connection deleted"
           }
         },
         "tags": [
@@ -343,10 +423,11 @@
         ]
       }
     },
-    "/user/{userId}/friends": {
+    "/user/{userId}/connections": {
       "get": {
-        "operationId": "UserController_getFriends",
-        "summary": "Get friends of a user",
+        "operationId": "UserController_getConnections",
+        "summary": "Get connections of a user",
+        "description": "Get user connections with optional type and state filters. Visibility rules apply: HIDDEN/CONNECTIONS users only show connections to self or connected users. Only the user themselves can see BLOCKED connections or non-ACTIVE states.",
         "parameters": [
           {
             "name": "userId",
@@ -355,11 +436,56 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "Filter connections by state. Can be multiple values. Non-self requesters can only see ACTIVE connections.",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "requested",
+                  "active",
+                  "rejected",
+                  "blocked"
+                ]
+              }
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filter connections by type. Can be multiple values.",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "friend",
+                  "blocked"
+                ]
+              }
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user viewing connections. Required for non-PUBLIC users. Only the user themselves can view BLOCKED or non-ACTIVE connections.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Friends returned",
+            "description": "Connections returned",
             "content": {
               "application/json": {
                 "schema": {
@@ -386,7 +512,17 @@
       "post": {
         "operationId": "UserController_getBatch",
         "summary": "Get a batch of users by IDs",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting a batch of users. If set, users will be filtered to only include users that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -434,6 +570,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting groups of a user. If set, groups will be filtered to only include groups that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -473,6 +618,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting events of a user. If set, events will be filtered to only include events that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -503,8 +657,18 @@
     "/event": {
       "post": {
         "operationId": "EventController_create",
-        "summary": "Create an event",
-        "parameters": [],
+        "summary": "Create an event. Owner will be the user creating the event or the group associated with the event (if set)",
+        "parameters": [
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user creating the event",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -525,6 +689,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Requester user not found, or associated group not found"
+          },
+          "401": {
+            "description": "User cannot create events for the associated group"
           }
         },
         "tags": [
@@ -532,7 +702,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       },
@@ -629,6 +799,15 @@
               "example": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user searching for events. If set, events will be filtered to only include events that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -651,20 +830,29 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
     },
     "/event/{eventId}": {
       "get": {
-        "operationId": "EventController_findOne",
+        "operationId": "EventController_get",
         "summary": "Get an event by ID",
         "parameters": [
           {
             "name": "eventId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user searching for events. If set, 401 may be returned if the user cannot view the event, otherwise requesterConnection will be set on the result.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -687,7 +875,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       },
@@ -699,6 +887,15 @@
             "name": "eventId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user updating the event",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -731,7 +928,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       },
@@ -750,7 +947,7 @@
           {
             "name": "X-Proxima-Nexus-Requester-User-Id",
             "in": "header",
-            "description": "Requester user ID",
+            "description": "ID of the user deleting the event",
             "required": true,
             "schema": {
               "type": "string"
@@ -767,14 +964,14 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
     },
-    "/event/{eventId}/attendees/{userId}": {
+    "/event/{eventId}/connection/{userId}": {
       "put": {
-        "operationId": "EventController_addAttendee",
+        "operationId": "EventController_addConnection",
         "summary": "Add an attendee to an event",
         "parameters": [
           {
@@ -792,8 +989,27 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user removing an attendee from the event",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MutateEventEntityConnectionDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Attendee added",
@@ -811,15 +1027,13 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
-      }
-    },
-    "/event/{eventId}/attendees": {
-      "get": {
-        "operationId": "EventController_getAttendees",
-        "summary": "Get attendees of an event",
+      },
+      "delete": {
+        "operationId": "EventController_removeConnection",
+        "summary": "Remove an attendee from an event",
         "parameters": [
           {
             "name": "eventId",
@@ -828,11 +1042,94 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user removing an attendee from the event",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MutateEventEntityConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Attendee removed"
+          }
+        },
+        "tags": [
+          "event"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/event/{eventId}/connections": {
+      "get": {
+        "operationId": "EventController_getConnections",
+        "summary": "Get connections of an event",
+        "parameters": [
+          {
+            "name": "eventId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filter connections by type. Can be a single type or multiple types (comma-separated or array)",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "attendee",
+                  "admin",
+                  "owner"
+                ]
+              }
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting connections of the event. If set, 401 may be returned if the user cannot view the event connections.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Attendees returned",
+            "description": "Connections returned",
             "content": {
               "application/json": {
                 "schema": {
@@ -850,7 +1147,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
@@ -859,7 +1156,17 @@
       "post": {
         "operationId": "EventController_getBatch",
         "summary": "Get a batch of events by IDs",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting a batch of events. If set, events will be filtered to only include events that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -890,7 +1197,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
@@ -899,7 +1206,17 @@
       "post": {
         "operationId": "GroupController_create",
         "summary": "Create a group",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user creating the group",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -927,7 +1244,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       },
@@ -1024,6 +1341,15 @@
               "example": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user searching for groups. If set, groups will be filtered to only include groups that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1046,20 +1372,29 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
     },
     "/group/{groupId}": {
       "get": {
-        "operationId": "GroupController_findOne",
+        "operationId": "GroupController_get",
         "summary": "Get a group by ID",
         "parameters": [
           {
             "name": "groupId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting a group by ID. If set, 401 may be returned if the user cannot view the group, otherwise requesterConnection will be set on the result.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1075,6 +1410,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "User cannot view this group"
           }
         },
         "tags": [
@@ -1082,7 +1420,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       },
@@ -1094,6 +1432,15 @@
             "name": "groupId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user updating the group",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -1126,7 +1473,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       },
@@ -1145,7 +1492,7 @@
           {
             "name": "X-Proxima-Nexus-Requester-User-Id",
             "in": "header",
-            "description": "Requester user ID",
+            "description": "ID of the user deleting the group",
             "required": true,
             "schema": {
               "type": "string"
@@ -1162,15 +1509,15 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
     },
-    "/group/{groupId}/members/{userId}": {
+    "/group/{groupId}/connection/{userId}": {
       "put": {
-        "operationId": "GroupController_addMember",
-        "summary": "Add a member to a group",
+        "operationId": "GroupController_addConnection",
+        "summary": "Add or update a connection to a group (member, admin, or owner)",
         "parameters": [
           {
             "name": "groupId",
@@ -1187,11 +1534,30 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user adding a connection to the group",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MutateGroupEntityConnectionDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Member added",
+            "description": "Connection added/updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -1199,6 +1565,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "User cannot add this connection"
           }
         },
         "tags": [
@@ -1206,13 +1575,13 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       },
       "delete": {
-        "operationId": "GroupController_removeMember",
-        "summary": "Remove a member from a group",
+        "operationId": "GroupController_removeConnection",
+        "summary": "Remove a connection from a group",
         "parameters": [
           {
             "name": "groupId",
@@ -1229,18 +1598,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user removing a connection from the group",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Member removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MutateGroupEntityConnectionDto"
               }
             }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Connection removed"
+          },
+          "401": {
+            "description": "User cannot remove this connection"
           }
         },
         "tags": [
@@ -1248,15 +1632,15 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
     },
-    "/group/{groupId}/members": {
+    "/group/{groupId}/connections": {
       "get": {
-        "operationId": "GroupController_getMembers",
-        "summary": "Get members of a group",
+        "operationId": "GroupController_getConnections",
+        "summary": "Get connections of a group",
         "parameters": [
           {
             "name": "groupId",
@@ -1265,11 +1649,57 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "Filter connections by state (e.g., requested for pending approvals)",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "requested",
+                  "active",
+                  "rejected",
+                  "blocked"
+                ]
+              }
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filter connections by type. Can be a single type or multiple types (comma-separated or array)",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "member",
+                  "admin",
+                  "owner"
+                ]
+              }
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting connections of the group. If set, 401 may be returned if the user cannot view the group connections.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Members returned",
+            "description": "Connections returned",
             "content": {
               "application/json": {
                 "schema": {
@@ -1280,6 +1710,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "User cannot view connections of this group"
           }
         },
         "tags": [
@@ -1287,7 +1720,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
@@ -1301,6 +1734,15 @@
             "name": "groupId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting events of the group. If set, events will be filtered to only include events that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1326,7 +1768,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
@@ -1335,7 +1777,17 @@
       "post": {
         "operationId": "GroupController_getBatch",
         "summary": "Get a batch of groups by IDs",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "X-Proxima-Nexus-Requester-User-Id",
+            "in": "header",
+            "description": "ID of the user getting a batch of groups. If set, groups will be filtered to only include groups that the user can see, and requesterConnection will be set on the results.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1366,7 +1818,7 @@
         ],
         "security": [
           {
-            "bearer": []
+            "api_key": []
           }
         ]
       }
@@ -1416,11 +1868,6 @@
             "type": "string",
             "description": "Display name",
             "example": "Display Name"
-          },
-          "requesterUserId": {
-            "type": "string",
-            "description": "User ID of the requester",
-            "example": "user-123"
           },
           "visibility": {
             "type": "string",
@@ -1474,7 +1921,6 @@
         },
         "required": [
           "displayName",
-          "requesterUserId",
           "visibility",
           "userId",
           "gender",
@@ -1494,6 +1940,50 @@
           "userId"
         ]
       },
+      "EntityConnectionDto": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "description": "Date/time the connection was created (ISO string)",
+            "example": "2024-05-01T12:34:56.789Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Date/time the connection was last updated (ISO string)",
+            "example": "2024-05-02T12:34:56.789Z"
+          },
+          "state": {
+            "type": "string",
+            "description": "Connection state",
+            "enum": [
+              "requested",
+              "active",
+              "rejected",
+              "blocked"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Connection type",
+            "enum": [
+              "attendee",
+              "admin",
+              "owner",
+              "member",
+              "admin",
+              "owner",
+              "friend",
+              "blocked",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "state",
+          "type"
+        ]
+      },
       "UserDto": {
         "type": "object",
         "properties": {
@@ -1501,11 +1991,6 @@
             "type": "string",
             "description": "Unique identifier for the entity",
             "example": "entity-123"
-          },
-          "tenantId": {
-            "type": "string",
-            "description": "Tenant identifier the entity belongs to",
-            "example": "tenant-abc"
           },
           "displayName": {
             "type": "string",
@@ -1555,6 +2040,14 @@
               }
             ]
           },
+          "requesterConnection": {
+            "description": "Connection to the requester",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityConnectionDto"
+              }
+            ]
+          },
           "gender": {
             "type": "string",
             "description": "Gender",
@@ -1574,11 +2067,6 @@
       "UpdateUserDto": {
         "type": "object",
         "properties": {
-          "requesterUserId": {
-            "type": "string",
-            "description": "User ID of the requester",
-            "example": "user-123"
-          },
           "visibility": {
             "type": "string",
             "description": "Visibility of the entity",
@@ -1630,37 +2118,26 @@
           }
         },
         "required": [
-          "requesterUserId",
           "displayName",
           "gender",
           "birthDate"
         ]
       },
-      "EntityConnectionDto": {
+      "MutateUserConnectionDto": {
         "type": "object",
         "properties": {
-          "createdAt": {
+          "type": {
             "type": "string",
-            "description": "Date/time the connection was created (ISO string)",
-            "example": "2024-05-01T12:34:56.789Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Date/time the connection was last updated (ISO string)",
-            "example": "2024-05-02T12:34:56.789Z"
-          },
-          "state": {
-            "type": "string",
-            "description": "Connection state",
+            "description": "Type of connection to create or modify",
             "enum": [
-              "requested",
-              "active",
-              "rejected"
-            ]
+              "friend",
+              "blocked"
+            ],
+            "example": "friend"
           }
         },
         "required": [
-          "state"
+          "type"
         ]
       },
       "UserEntityConnectionDto": {
@@ -1682,7 +2159,23 @@
             "enum": [
               "requested",
               "active",
-              "rejected"
+              "rejected",
+              "blocked"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Connection type",
+            "enum": [
+              "attendee",
+              "admin",
+              "owner",
+              "member",
+              "admin",
+              "owner",
+              "friend",
+              "blocked",
+              "none"
             ]
           },
           "userId": {
@@ -1693,6 +2186,7 @@
         },
         "required": [
           "state",
+          "type",
           "userId"
         ]
       },
@@ -1734,7 +2228,23 @@
             "enum": [
               "requested",
               "active",
-              "rejected"
+              "rejected",
+              "blocked"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Connection type",
+            "enum": [
+              "attendee",
+              "admin",
+              "owner",
+              "member",
+              "admin",
+              "owner",
+              "friend",
+              "blocked",
+              "none"
             ]
           },
           "groupId": {
@@ -1745,6 +2255,7 @@
         },
         "required": [
           "state",
+          "type",
           "groupId"
         ]
       },
@@ -1767,7 +2278,23 @@
             "enum": [
               "requested",
               "active",
-              "rejected"
+              "rejected",
+              "blocked"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Connection type",
+            "enum": [
+              "attendee",
+              "admin",
+              "owner",
+              "member",
+              "admin",
+              "owner",
+              "friend",
+              "blocked",
+              "none"
             ]
           },
           "eventId": {
@@ -1778,6 +2305,7 @@
         },
         "required": [
           "state",
+          "type",
           "eventId"
         ]
       },
@@ -1788,11 +2316,6 @@
             "type": "string",
             "description": "Display name",
             "example": "Display Name"
-          },
-          "requesterUserId": {
-            "type": "string",
-            "description": "User ID of the requester",
-            "example": "user-123"
           },
           "visibility": {
             "type": "string",
@@ -1852,11 +2375,15 @@
             "type": "string",
             "description": "Identifier of associated group which owns the event. Owners/admins of the group will be admins of the event.",
             "example": "group-123"
+          },
+          "maxNumAttendees": {
+            "type": "number",
+            "description": "Maximum number of attendees allowed (null = unlimited)",
+            "example": 100
           }
         },
         "required": [
           "displayName",
-          "requesterUserId",
           "visibility",
           "eventId",
           "startTime",
@@ -1871,11 +2398,6 @@
             "type": "string",
             "description": "Unique identifier for the entity",
             "example": "entity-123"
-          },
-          "tenantId": {
-            "type": "string",
-            "description": "Tenant identifier the entity belongs to",
-            "example": "tenant-abc"
           },
           "displayName": {
             "type": "string",
@@ -1925,6 +2447,14 @@
               }
             ]
           },
+          "requesterConnection": {
+            "description": "Connection to the requester",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityConnectionDto"
+              }
+            ]
+          },
           "startTime": {
             "type": "string",
             "description": "Start time (ISO 8601)",
@@ -1944,6 +2474,16 @@
             "type": "string",
             "description": "Identifier of associated group which owns the event. Owners/admins of the group will be admins of the event.",
             "example": "group-123"
+          },
+          "numAttendees": {
+            "type": "number",
+            "description": "Number of active attendees",
+            "example": 42
+          },
+          "maxNumAttendees": {
+            "type": "number",
+            "description": "Maximum number of attendees allowed (null = unlimited)",
+            "example": 100
           }
         },
         "required": [
@@ -1955,11 +2495,6 @@
       "UpdateEventDto": {
         "type": "object",
         "properties": {
-          "requesterUserId": {
-            "type": "string",
-            "description": "User ID of the requester",
-            "example": "user-123"
-          },
           "visibility": {
             "type": "string",
             "description": "Visibility of the entity",
@@ -2013,13 +2548,34 @@
             "type": "string",
             "description": "Event type",
             "example": "concert"
+          },
+          "maxNumAttendees": {
+            "type": "number",
+            "description": "Maximum number of attendees allowed (null = unlimited)",
+            "example": 100
           }
         },
         "required": [
-          "requesterUserId",
           "displayName",
           "startTime",
           "endTime",
+          "type"
+        ]
+      },
+      "MutateEventEntityConnectionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Connection type",
+            "enum": [
+              "attendee",
+              "admin",
+              "owner"
+            ]
+          }
+        },
+        "required": [
           "type"
         ]
       },
@@ -2049,11 +2605,6 @@
             "type": "string",
             "description": "Display name",
             "example": "Display Name"
-          },
-          "requesterUserId": {
-            "type": "string",
-            "description": "User ID of the requester",
-            "example": "user-123"
           },
           "visibility": {
             "type": "string",
@@ -2097,12 +2648,16 @@
           "type": {
             "type": "string",
             "description": "Group type",
-            "example": "club"
+            "enum": [
+              "open",
+              "request",
+              "invite"
+            ],
+            "example": "open"
           }
         },
         "required": [
           "displayName",
-          "requesterUserId",
           "visibility",
           "groupId",
           "type"
@@ -2115,11 +2670,6 @@
             "type": "string",
             "description": "Unique identifier for the entity",
             "example": "entity-123"
-          },
-          "tenantId": {
-            "type": "string",
-            "description": "Tenant identifier the entity belongs to",
-            "example": "tenant-abc"
           },
           "displayName": {
             "type": "string",
@@ -2169,10 +2719,28 @@
               }
             ]
           },
+          "requesterConnection": {
+            "description": "Connection to the requester",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityConnectionDto"
+              }
+            ]
+          },
           "type": {
             "type": "string",
             "description": "Group type",
-            "example": "club"
+            "enum": [
+              "open",
+              "request",
+              "invite"
+            ],
+            "example": "open"
+          },
+          "numMembers": {
+            "type": "number",
+            "description": "Number of active members",
+            "example": 150
           }
         },
         "required": [
@@ -2182,11 +2750,6 @@
       "UpdateGroupDto": {
         "type": "object",
         "properties": {
-          "requesterUserId": {
-            "type": "string",
-            "description": "User ID of the requester",
-            "example": "user-123"
-          },
           "visibility": {
             "type": "string",
             "description": "Visibility of the entity",
@@ -2229,12 +2792,33 @@
           "type": {
             "type": "string",
             "description": "Group type",
-            "example": "club"
+            "enum": [
+              "open",
+              "request",
+              "invite"
+            ],
+            "example": "open"
           }
         },
         "required": [
-          "requesterUserId",
           "displayName",
+          "type"
+        ]
+      },
+      "MutateGroupEntityConnectionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Connection type",
+            "enum": [
+              "member",
+              "admin",
+              "owner"
+            ]
+          }
+        },
+        "required": [
           "type"
         ]
       },

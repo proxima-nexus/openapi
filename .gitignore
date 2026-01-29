@@ -26,3 +26,5 @@ yarn-error.log*
 # Temporary files
 *.tmp
 .cache/
+
+*.tgz
