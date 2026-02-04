@@ -448,10 +448,9 @@
               "items": {
                 "type": "string",
                 "enum": [
-                  "requested",
-                  "active",
-                  "rejected",
-                  "blocked"
+                  "incoming_request",
+                  "outgoing_request",
+                  "active"
                 ]
               }
             }
@@ -1663,8 +1662,7 @@
                 "enum": [
                   "requested",
                   "active",
-                  "rejected",
-                  "blocked"
+                  "invited"
                 ]
               }
             }
@@ -1953,16 +1951,6 @@
             "description": "Date/time the connection was last updated (ISO string)",
             "example": "2024-05-02T12:34:56.789Z"
           },
-          "state": {
-            "type": "string",
-            "description": "Connection state",
-            "enum": [
-              "requested",
-              "active",
-              "rejected",
-              "blocked"
-            ]
-          },
           "type": {
             "type": "string",
             "description": "Connection type",
@@ -1971,16 +1959,24 @@
               "admin",
               "owner",
               "member",
-              "admin",
-              "owner",
               "friend",
               "blocked",
               "none"
             ]
+          },
+          "state": {
+            "type": "string",
+            "description": "Connection state",
+            "enum": [
+              "incoming_request",
+              "outgoing_request",
+              "active",
+              "requested",
+              "invited"
+            ]
           }
         },
         "required": [
-          "state",
           "type"
         ]
       },
@@ -2153,16 +2149,6 @@
             "description": "Date/time the connection was last updated (ISO string)",
             "example": "2024-05-02T12:34:56.789Z"
           },
-          "state": {
-            "type": "string",
-            "description": "Connection state",
-            "enum": [
-              "requested",
-              "active",
-              "rejected",
-              "blocked"
-            ]
-          },
           "type": {
             "type": "string",
             "description": "Connection type",
@@ -2171,11 +2157,20 @@
               "admin",
               "owner",
               "member",
-              "admin",
-              "owner",
               "friend",
               "blocked",
               "none"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "description": "Connection state",
+            "enum": [
+              "incoming_request",
+              "outgoing_request",
+              "active",
+              "requested",
+              "invited"
             ]
           },
           "userId": {
@@ -2185,7 +2180,6 @@
           }
         },
         "required": [
-          "state",
           "type",
           "userId"
         ]
@@ -2222,16 +2216,6 @@
             "description": "Date/time the connection was last updated (ISO string)",
             "example": "2024-05-02T12:34:56.789Z"
           },
-          "state": {
-            "type": "string",
-            "description": "Connection state",
-            "enum": [
-              "requested",
-              "active",
-              "rejected",
-              "blocked"
-            ]
-          },
           "type": {
             "type": "string",
             "description": "Connection type",
@@ -2240,11 +2224,20 @@
               "admin",
               "owner",
               "member",
-              "admin",
-              "owner",
               "friend",
               "blocked",
               "none"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "description": "Connection state",
+            "enum": [
+              "incoming_request",
+              "outgoing_request",
+              "active",
+              "requested",
+              "invited"
             ]
           },
           "groupId": {
@@ -2254,7 +2247,6 @@
           }
         },
         "required": [
-          "state",
           "type",
           "groupId"
         ]
@@ -2272,16 +2264,6 @@
             "description": "Date/time the connection was last updated (ISO string)",
             "example": "2024-05-02T12:34:56.789Z"
           },
-          "state": {
-            "type": "string",
-            "description": "Connection state",
-            "enum": [
-              "requested",
-              "active",
-              "rejected",
-              "blocked"
-            ]
-          },
           "type": {
             "type": "string",
             "description": "Connection type",
@@ -2290,11 +2272,20 @@
               "admin",
               "owner",
               "member",
-              "admin",
-              "owner",
               "friend",
               "blocked",
               "none"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "description": "Connection state",
+            "enum": [
+              "incoming_request",
+              "outgoing_request",
+              "active",
+              "requested",
+              "invited"
             ]
           },
           "eventId": {
@@ -2304,7 +2295,6 @@
           }
         },
         "required": [
-          "state",
           "type",
           "eventId"
         ]

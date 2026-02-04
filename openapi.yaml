@@ -302,10 +302,9 @@ paths:
             items:
               type: string
               enum:
-                - requested
+                - incoming_request
+                - outgoing_request
                 - active
-                - rejected
-                - blocked
         - name: type
           required: false
           in: query
@@ -1081,8 +1080,7 @@ paths:
               enum:
                 - requested
                 - active
-                - rejected
-                - blocked
+                - invited
         - name: type
           required: false
           in: query
@@ -1280,14 +1278,6 @@ components:
           type: string
           description: Date/time the connection was last updated (ISO string)
           example: '2024-05-02T12:34:56.789Z'
-        state:
-          type: string
-          description: Connection state
-          enum:
-            - requested
-            - active
-            - rejected
-            - blocked
         type:
           type: string
           description: Connection type
@@ -1296,13 +1286,19 @@ components:
             - admin
             - owner
             - member
-            - admin
-            - owner
             - friend
             - blocked
             - none
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - incoming_request
+            - outgoing_request
+            - active
+            - requested
+            - invited
       required:
-        - state
         - type
     UserDto:
       type: object
@@ -1427,14 +1423,6 @@ components:
           type: string
           description: Date/time the connection was last updated (ISO string)
           example: '2024-05-02T12:34:56.789Z'
-        state:
-          type: string
-          description: Connection state
-          enum:
-            - requested
-            - active
-            - rejected
-            - blocked
         type:
           type: string
           description: Connection type
@@ -1443,17 +1431,23 @@ components:
             - admin
             - owner
             - member
-            - admin
-            - owner
             - friend
             - blocked
             - none
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - incoming_request
+            - outgoing_request
+            - active
+            - requested
+            - invited
         userId:
           type: string
           description: User ID
           example: user-123
       required:
-        - state
         - type
         - userId
     GetUsersDto:
@@ -1480,14 +1474,6 @@ components:
           type: string
           description: Date/time the connection was last updated (ISO string)
           example: '2024-05-02T12:34:56.789Z'
-        state:
-          type: string
-          description: Connection state
-          enum:
-            - requested
-            - active
-            - rejected
-            - blocked
         type:
           type: string
           description: Connection type
@@ -1496,17 +1482,23 @@ components:
             - admin
             - owner
             - member
-            - admin
-            - owner
             - friend
             - blocked
             - none
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - incoming_request
+            - outgoing_request
+            - active
+            - requested
+            - invited
         groupId:
           type: string
           description: Group ID
           example: group-123
       required:
-        - state
         - type
         - groupId
     EventEntityConnectionDto:
@@ -1520,14 +1512,6 @@ components:
           type: string
           description: Date/time the connection was last updated (ISO string)
           example: '2024-05-02T12:34:56.789Z'
-        state:
-          type: string
-          description: Connection state
-          enum:
-            - requested
-            - active
-            - rejected
-            - blocked
         type:
           type: string
           description: Connection type
@@ -1536,17 +1520,23 @@ components:
             - admin
             - owner
             - member
-            - admin
-            - owner
             - friend
             - blocked
             - none
+        state:
+          type: string
+          description: Connection state
+          enum:
+            - incoming_request
+            - outgoing_request
+            - active
+            - requested
+            - invited
         eventId:
           type: string
           description: Event ID
           example: event-123
       required:
-        - state
         - type
         - eventId
     CreateEventDto:

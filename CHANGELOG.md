@@ -5,6 +5,21 @@ All notable changes to the Proxima Nexus OpenAPI specification are documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-02-04
+
+### Changed
+
+#### Connection state enums
+
+- **User connections** (`GET /user/{userId}/connections` query filter and connection DTOs): state enum `requested` | `active` | `rejected` | `blocked` → `incoming_request` | `outgoing_request` | `active`.
+- **Event connections** (`GET /event/{eventId}/connections` query filter and connection DTOs): state enum `requested` | `active` | `rejected` | `blocked` → `requested` | `active` | `invited`.
+- **Group connections** (connection DTOs): state enum aligned with the same values as event connections: `incoming_request` | `outgoing_request` | `active` | `requested` | `invited`.
+
+#### Connection DTOs (User, Event, Group)
+
+- **EntityConnectionDto** and related connection response DTOs: `state` is no longer in `required`; only `type` is required.
+- **type** enum: removed duplicate `admin` and `owner` values from connection type enums.
+
 ## [2.0.0] - 2025-01-29
 
 ### Breaking changes
