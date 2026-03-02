@@ -5,6 +5,27 @@ All notable changes to the Proxima Nexus OpenAPI specification are documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-03-02
+
+### Added
+
+- **Event series API**
+  - `POST /event-series`: create an event series from an RRULE and pre-generate all event instances. The creating user (or associated group) becomes the OWNER.
+  - `GET /event-series/{seriesId}`: fetch an event series definition.
+  - `PUT /event-series/{seriesId}`: update a series and propagate metadata changes to upcoming instances (per-instance overrides are preserved).
+  - `DELETE /event-series/{seriesId}`: delete a series and all upcoming event instances; past instances are preserved.
+  - `GET /event-series/{seriesId}/events`: list all event instances in a series, ordered by start time.
+- **New schemas**: `CreateEventSeriesDto`, `EventSeriesDto`, and `UpdateEventSeriesDto` for creating, returning, and updating event series.
+- **Event instances**: `EventDto` now includes an optional `seriesId` linking an instance back to its series.
+
+### Changed
+
+- **Event updates**: `PUT /event/{eventId}` summary clarifies how updates behave for instances in a series—fields supplied in the request body are treated as per-instance overrides and no longer follow series-level updates.
+- **Validation**
+  - `UpdateUserDto`: `displayName` is no longer required; only `gender` and `birthDate` remain required.
+  - `CreateEventDto`: schema no longer requires `displayName`, `startTime`, `endTime`, or `type` (server-side validation may still enforce business rules).
+  - Group create/update DTOs that previously required `displayName` now only require `type`.
+
 ## [2.0.1] - 2026-02-04
 
 ### Changed

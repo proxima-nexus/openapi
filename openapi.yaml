@@ -583,7 +583,9 @@ paths:
         - api_key: []
     put:
       operationId: EventController_update
-      summary: Update an event
+      summary: >-
+        Update an event. For series instances, only the fields provided in the request body will be marked as overridden
+        and will no longer be propagated by series-level updates.
       parameters:
         - name: eventId
           required: true
@@ -1180,6 +1182,156 @@ paths:
         - group
       security:
         - api_key: []
+  /event-series:
+    post:
+      operationId: EventSeriesController_create
+      summary: Create an event series
+      description: >-
+        Creates a series definition and pre-generates all event instances based on the RRULE. The creating user (or
+        associated group) becomes the OWNER.
+      parameters:
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user creating the series
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventSeriesDto'
+      responses:
+        '201':
+          description: Created series ID
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          description: Requester user ID missing, or associated group not found
+        '401':
+          description: User cannot create series for the associated group
+      tags:
+        - event-series
+      security:
+        - api_key: []
+  /event-series/{seriesId}:
+    get:
+      operationId: EventSeriesController_get
+      summary: Get an event series by ID
+      parameters:
+        - name: seriesId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event series returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventSeriesDto'
+        '404':
+          description: Series not found
+      tags:
+        - event-series
+      security:
+        - api_key: []
+    put:
+      operationId: EventSeriesController_update
+      summary: Update an event series
+      description: >-
+        Updates the series definition and propagates metadata changes to all upcoming event instances. Fields that were
+        individually overridden on a specific instance will not be overwritten.
+      parameters:
+        - name: seriesId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user updating the series
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventSeriesDto'
+      responses:
+        '200':
+          description: Updated series ID
+          content:
+            application/json:
+              schema:
+                type: string
+        '401':
+          description: User cannot edit this series
+        '404':
+          description: Series not found
+      tags:
+        - event-series
+      security:
+        - api_key: []
+    delete:
+      operationId: EventSeriesController_remove
+      summary: Delete an event series
+      description: Deletes the series and all upcoming event instances. Past instances (already started) are preserved.
+      parameters:
+        - name: seriesId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: X-Proxima-Nexus-Requester-User-Id
+          in: header
+          description: ID of the user deleting the series
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Series deleted
+        '401':
+          description: User cannot delete this series
+        '404':
+          description: Series not found
+      tags:
+        - event-series
+      security:
+        - api_key: []
+  /event-series/{seriesId}/events:
+    get:
+      operationId: EventSeriesController_getInstances
+      summary: List all event instances in a series
+      description: Returns all event instances (past and upcoming) belonging to this series, ordered by start time.
+      parameters:
+        - name: seriesId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event instances returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDto'
+        '404':
+          description: Series not found
+      tags:
+        - event-series
+      security:
+        - api_key: []
 info:
   title: proxima-nexus-data-plane-api
   description: Proxima Nexus Data Plane API
@@ -1397,7 +1549,6 @@ components:
           description: Birth date (ISO 8601)
           example: '1990-01-01'
       required:
-        - displayName
         - gender
         - birthDate
     MutateUserConnectionDto:
@@ -1671,6 +1822,10 @@ components:
           type: number
           description: Maximum number of attendees allowed (null = unlimited)
           example: 100
+        seriesId:
+          type: string
+          description: ID of the event series this instance belongs to, if any
+          example: series-weekly-standup
       required:
         - startTime
         - endTime
@@ -1722,11 +1877,6 @@ components:
           type: number
           description: Maximum number of attendees allowed (null = unlimited)
           example: 100
-      required:
-        - displayName
-        - startTime
-        - endTime
-        - type
     MutateEventEntityConnectionDto:
       type: object
       properties:
@@ -1900,7 +2050,6 @@ components:
             - invite
           example: open
       required:
-        - displayName
         - type
     MutateGroupEntityConnectionDto:
       type: object
@@ -1927,3 +2076,204 @@ components:
             type: string
       required:
         - groupIds
+    CreateEventSeriesDto:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        seriesId:
+          type: string
+          description: Unique series identifier
+          example: series-weekly-standup
+        type:
+          type: string
+          description: Event type
+          example: standup
+        rrule:
+          type: string
+          description: iCal RRULE string (without DTSTART). Defines the recurrence pattern.
+          example: FREQ=WEEKLY;BYDAY=TH;UNTIL=20261231T000000Z
+        startDate:
+          type: string
+          description: Date of the first occurrence in YYYY-MM-DD format (local date in the given timezone)
+          example: '2026-01-08'
+        instanceStartTime:
+          type: string
+          description: Start time of each instance in HH:MM format (local time in the given timezone)
+          example: '10:00'
+        instanceEndTime:
+          type: string
+          description: End time of each instance in HH:MM format (local time in the given timezone)
+          example: '11:00'
+        timezone:
+          type: string
+          description: IANA timezone for interpreting times and generating instances
+          example: America/New_York
+        associatedGroupId:
+          type: string
+          description: Identifier of the associated group. Owners/admins of the group will be admins of the series.
+          example: group-engineering
+        maxNumAttendees:
+          type: number
+          description: Maximum number of attendees per event instance (null = unlimited)
+          example: 50
+      required:
+        - displayName
+        - visibility
+        - seriesId
+        - type
+        - rrule
+        - startDate
+        - instanceStartTime
+        - instanceEndTime
+        - timezone
+    EventSeriesDto:
+      type: object
+      properties:
+        entityId:
+          type: string
+          description: Unique identifier for the entity
+          example: entity-123
+        displayName:
+          type: string
+          description: Display name of the entity
+          example: Sample Entity
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - PUBLIC
+            - PRIVATE
+          example: PUBLIC
+        description:
+          type: string
+          description: Description of the entity
+          example: A description of the entity
+        tags:
+          description: Tags associated with the entity
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          description: Date/time the entity was created (ISO string)
+          example: '2024-05-01T12:34:56.789Z'
+        updatedAt:
+          type: string
+          description: Date/time the entity was last updated (ISO string)
+          example: '2024-05-02T12:34:56.789Z'
+        location:
+          description: Required location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        requesterConnection:
+          description: Connection to the requester
+          allOf:
+            - $ref: '#/components/schemas/EntityConnectionDto'
+        type:
+          type: string
+          description: Event type
+          example: standup
+        rrule:
+          type: string
+          description: iCal RRULE string defining the recurrence pattern
+          example: FREQ=WEEKLY;BYDAY=TH;UNTIL=20261231T000000Z
+        startDate:
+          type: string
+          description: Date of the first occurrence (YYYY-MM-DD, local in timezone)
+          example: '2026-01-08'
+        instanceStartTime:
+          type: string
+          description: Start time of each instance in HH:MM format
+          example: '10:00'
+        instanceEndTime:
+          type: string
+          description: End time of each instance in HH:MM format
+          example: '11:00'
+        timezone:
+          type: string
+          description: IANA timezone for all instances
+          example: America/New_York
+        associatedGroupId:
+          type: string
+          description: Identifier of the associated group
+          example: group-engineering
+        maxNumAttendees:
+          type: number
+          description: Maximum number of attendees per event instance
+          example: 50
+      required:
+        - type
+        - rrule
+        - startDate
+        - instanceStartTime
+        - instanceEndTime
+        - timezone
+    UpdateEventSeriesDto:
+      type: object
+      properties:
+        visibility:
+          type: string
+          description: Visibility of the entity
+          enum:
+            - public
+            - connections
+            - hidden
+          example: public
+        displayName:
+          type: string
+          description: Display name
+          example: Display Name
+        location:
+          description: Optional location information
+          allOf:
+            - $ref: '#/components/schemas/LocationDto'
+        description:
+          type: string
+          description: Entity description
+          example: A description of the entity
+        tags:
+          description: Entity tags
+          example:
+            - tag1
+            - tag2
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          description: Event type
+          example: standup
+        maxNumAttendees:
+          type: number
+          description: Maximum number of attendees per event instance (null = unlimited)
+          example: 50
