@@ -133,6 +133,26 @@
             }
           },
           {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 date — filter events ending after this time",
+            "schema": {
+              "example": "2025-01-01T00:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 date — filter events starting before this time",
+            "schema": {
+              "example": "2025-12-31T23:59:59Z",
+              "type": "string"
+            }
+          },
+          {
             "name": "X-Proxima-Nexus-Requester-User-Id",
             "in": "header",
             "description": "ID of the user searching for users. If set, users will be filtered to only include users that the user can see, and requesterConnection will be set on the results.",
@@ -619,6 +639,24 @@
             }
           },
           {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 start of range (events ending after this time). Default: NOW()",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 end of range (events starting before this time)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "X-Proxima-Nexus-Requester-User-Id",
             "in": "header",
             "description": "ID of the user getting events of a user. If set, events will be filtered to only include events that the user can see, and requesterConnection will be set on the results.",
@@ -797,6 +835,26 @@
             "schema": {
               "example": 100,
               "type": "number"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 date — filter events ending after this time",
+            "schema": {
+              "example": "2025-01-01T00:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 date — filter events starting before this time",
+            "schema": {
+              "example": "2025-12-31T23:59:59Z",
+              "type": "string"
             }
           },
           {
@@ -1342,6 +1400,26 @@
             }
           },
           {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 date — filter events ending after this time",
+            "schema": {
+              "example": "2025-01-01T00:00:00Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 date — filter events starting before this time",
+            "schema": {
+              "example": "2025-12-31T23:59:59Z",
+              "type": "string"
+            }
+          },
+          {
             "name": "X-Proxima-Nexus-Requester-User-Id",
             "in": "header",
             "description": "ID of the user searching for groups. If set, groups will be filtered to only include groups that the user can see, and requesterConnection will be set on the results.",
@@ -1737,6 +1815,24 @@
             }
           },
           {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 start of range (events ending after this time). Default: NOW()",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 end of range (events starting before this time)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "X-Proxima-Nexus-Requester-User-Id",
             "in": "header",
             "description": "ID of the user getting events of the group. If set, events will be filtered to only include events that the user can see, and requesterConnection will be set on the results.",
@@ -2020,13 +2116,31 @@
     "/event-series/{seriesId}/events": {
       "get": {
         "operationId": "EventSeriesController_getInstances",
-        "summary": "List all event instances in a series",
-        "description": "Returns all event instances (past and upcoming) belonging to this series, ordered by start time.",
+        "summary": "List event instances in a series",
+        "description": "Returns event instances belonging to this series, ordered by start time. Defaults to only ongoing/upcoming instances.",
         "parameters": [
           {
             "name": "seriesId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 start of range (events ending after this time). Default: NOW()",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 end of range (events starting before this time)",
             "schema": {
               "type": "string"
             }

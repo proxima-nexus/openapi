@@ -1,6 +1,6 @@
 {
     "name": "@proxima-nexus/openapi",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "description": "OpenAPI specification for Proxima Nexus",
     "main": "openapi.json",
     "types": "openapi.json",

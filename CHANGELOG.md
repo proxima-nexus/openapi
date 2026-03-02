@@ -5,6 +5,21 @@ All notable changes to the Proxima Nexus OpenAPI specification are documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-03-02
+
+### Added
+
+- **Event time range filters**
+  - `GET /event`: optional `from` / `to` query params to filter events by time window (`from` = events ending after this instant, `to` = events starting before this instant).
+  - `GET /user/{userId}/events`: optional `from` / `to` range filters with the same semantics; `from` defaults to “now” when omitted.
+  - `GET /group/{groupId}/events`: optional `from` / `to` range filters with the same semantics.
+  - `GET /events/search`: optional `from` / `to` range filters with the same semantics.
+  - `GET /event-series/{seriesId}/events`: optional `from` / `to` range filters with the same semantics.
+
+### Changed
+
+- **Event series instances**: `GET /event-series/{seriesId}/events` summary/description now clarify that the endpoint returns instances ordered by start time and **defaults to only ongoing/upcoming instances** unless a custom `from` / `to` window is provided.
+
 ## [2.1.0] - 2026-03-02
 
 ### Added

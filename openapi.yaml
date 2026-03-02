@@ -93,6 +93,20 @@ paths:
           schema:
             example: 100
             type: number
+        - name: from
+          required: false
+          in: query
+          description: ISO 8601 date — filter events ending after this time
+          schema:
+            example: '2025-01-01T00:00:00Z'
+            type: string
+        - name: to
+          required: false
+          in: query
+          description: ISO 8601 date — filter events starting before this time
+          schema:
+            example: '2025-12-31T23:59:59Z'
+            type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -411,6 +425,18 @@ paths:
           in: path
           schema:
             type: string
+        - name: from
+          required: false
+          in: query
+          description: 'ISO 8601 start of range (events ending after this time). Default: NOW()'
+          schema:
+            type: string
+        - name: to
+          required: false
+          in: query
+          description: ISO 8601 end of range (events starting before this time)
+          schema:
+            type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -531,6 +557,20 @@ paths:
           schema:
             example: 100
             type: number
+        - name: from
+          required: false
+          in: query
+          description: ISO 8601 date — filter events ending after this time
+          schema:
+            example: '2025-01-01T00:00:00Z'
+            type: string
+        - name: to
+          required: false
+          in: query
+          description: ISO 8601 date — filter events starting before this time
+          schema:
+            example: '2025-12-31T23:59:59Z'
+            type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -879,6 +919,20 @@ paths:
           schema:
             example: 100
             type: number
+        - name: from
+          required: false
+          in: query
+          description: ISO 8601 date — filter events ending after this time
+          schema:
+            example: '2025-01-01T00:00:00Z'
+            type: string
+        - name: to
+          required: false
+          in: query
+          description: ISO 8601 date — filter events starting before this time
+          schema:
+            example: '2025-12-31T23:59:59Z'
+            type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -1129,6 +1183,18 @@ paths:
           in: path
           schema:
             type: string
+        - name: from
+          required: false
+          in: query
+          description: 'ISO 8601 start of range (events ending after this time). Default: NOW()'
+          schema:
+            type: string
+        - name: to
+          required: false
+          in: query
+          description: ISO 8601 end of range (events starting before this time)
+          schema:
+            type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -1309,12 +1375,26 @@ paths:
   /event-series/{seriesId}/events:
     get:
       operationId: EventSeriesController_getInstances
-      summary: List all event instances in a series
-      description: Returns all event instances (past and upcoming) belonging to this series, ordered by start time.
+      summary: List event instances in a series
+      description: >-
+        Returns event instances belonging to this series, ordered by start time. Defaults to only ongoing/upcoming
+        instances.
       parameters:
         - name: seriesId
           required: true
           in: path
+          schema:
+            type: string
+        - name: from
+          required: false
+          in: query
+          description: 'ISO 8601 start of range (events ending after this time). Default: NOW()'
+          schema:
+            type: string
+        - name: to
+          required: false
+          in: query
+          description: ISO 8601 end of range (events starting before this time)
           schema:
             type: string
       responses:
