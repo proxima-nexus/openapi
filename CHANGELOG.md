@@ -5,6 +5,18 @@ All notable changes to the Proxima Nexus OpenAPI specification are documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-03-04
+
+### Added
+
+- **Group event series**
+  - `GET /group/{groupId}/event-series`: list event series associated with a group, returned as `EventSeriesEntityConnectionDto` objects (including connection `type`, `state`, and `seriesId`).
+- **Event series batch lookup**
+  - `POST /event-series/batch`: fetch multiple event series in a single call using `GetEventSeriesDto.seriesIds`.
+- **Schemas**
+  - `EventSeriesEntityConnectionDto`: describes a user/group connection to an event series (timestamps, connection `type`/`state`, and `seriesId`).
+  - `GetEventSeriesDto`: request body for batch series lookup by IDs.
+
 ## [2.2.0] - 2026-03-02
 
 ### Added

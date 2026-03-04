@@ -1867,6 +1867,45 @@
         ]
       }
     },
+    "/group/{groupId}/event-series": {
+      "get": {
+        "operationId": "GroupController_getEventSeries",
+        "summary": "Get event series of a group",
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event series returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventSeriesEntityConnectionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "group"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
     "/group/batch": {
       "post": {
         "operationId": "GroupController_getBatch",
@@ -2101,6 +2140,46 @@
           },
           "404": {
             "description": "Series not found"
+          }
+        },
+        "tags": [
+          "event-series"
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/event-series/batch": {
+      "post": {
+        "operationId": "EventSeriesController_getBatch",
+        "summary": "Get a batch of event series by IDs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetEventSeriesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event series returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventSeriesDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3162,6 +3241,54 @@
           "type"
         ]
       },
+      "EventSeriesEntityConnectionDto": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "description": "Date/time the connection was created (ISO string)",
+            "example": "2024-05-01T12:34:56.789Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Date/time the connection was last updated (ISO string)",
+            "example": "2024-05-02T12:34:56.789Z"
+          },
+          "type": {
+            "type": "string",
+            "description": "Connection type",
+            "enum": [
+              "attendee",
+              "admin",
+              "owner",
+              "member",
+              "friend",
+              "blocked",
+              "none"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "description": "Connection state",
+            "enum": [
+              "incoming_request",
+              "outgoing_request",
+              "active",
+              "requested",
+              "invited"
+            ]
+          },
+          "seriesId": {
+            "type": "string",
+            "description": "Event series ID",
+            "example": "series-123"
+          }
+        },
+        "required": [
+          "type",
+          "seriesId"
+        ]
+      },
       "GetGroupsDto": {
         "type": "object",
         "properties": {
@@ -3448,6 +3575,25 @@
             "example": 50
           }
         }
+      },
+      "GetEventSeriesDto": {
+        "type": "object",
+        "properties": {
+          "seriesIds": {
+            "description": "The IDs of the event series",
+            "example": [
+              "series-123",
+              "series-456"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "seriesIds"
+        ]
       }
     }
   }
