@@ -1169,7 +1169,8 @@
                 "enum": [
                   "attendee",
                   "admin",
-                  "owner"
+                  "owner",
+                  "associated_group"
                 ]
               }
             }
@@ -2390,6 +2391,7 @@
               "attendee",
               "admin",
               "owner",
+              "associated_group",
               "member",
               "friend",
               "blocked",
@@ -2587,6 +2589,7 @@
               "attendee",
               "admin",
               "owner",
+              "associated_group",
               "member",
               "friend",
               "blocked",
@@ -2654,6 +2657,7 @@
               "attendee",
               "admin",
               "owner",
+              "associated_group",
               "member",
               "friend",
               "blocked",
@@ -2702,6 +2706,7 @@
               "attendee",
               "admin",
               "owner",
+              "associated_group",
               "member",
               "friend",
               "blocked",
@@ -2991,7 +2996,8 @@
             "enum": [
               "attendee",
               "admin",
-              "owner"
+              "owner",
+              "associated_group"
             ]
           }
         },
@@ -3261,6 +3267,7 @@
               "attendee",
               "admin",
               "owner",
+              "associated_group",
               "member",
               "friend",
               "blocked",

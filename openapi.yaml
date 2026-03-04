@@ -771,6 +771,7 @@ paths:
                 - attendee
                 - admin
                 - owner
+                - associated_group
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -1564,6 +1565,7 @@ components:
             - attendee
             - admin
             - owner
+            - associated_group
             - member
             - friend
             - blocked
@@ -1708,6 +1710,7 @@ components:
             - attendee
             - admin
             - owner
+            - associated_group
             - member
             - friend
             - blocked
@@ -1759,6 +1762,7 @@ components:
             - attendee
             - admin
             - owner
+            - associated_group
             - member
             - friend
             - blocked
@@ -1797,6 +1801,7 @@ components:
             - attendee
             - admin
             - owner
+            - associated_group
             - member
             - friend
             - blocked
@@ -2014,6 +2019,7 @@ components:
             - attendee
             - admin
             - owner
+            - associated_group
       required:
         - type
     GetEventsDto:
@@ -2208,6 +2214,7 @@ components:
             - attendee
             - admin
             - owner
+            - associated_group
             - member
             - friend
             - blocked

@@ -5,6 +5,14 @@ All notable changes to the Proxima Nexus OpenAPI specification are documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-03-04
+
+### Changed
+
+- **Connection types**
+  - Added `associated_group` to connection `type` enums across event, group, and event-series connection DTOs and related responses, so clients can distinguish when a group is linked to an event or series as an associated organizer rather than just an attendee/admin/owner.
+  - `GetEventsDto` and other connection-type-based filters now accept `associated_group` as a valid value.
+
 ## [2.3.0] - 2026-03-04
 
 ### Added
