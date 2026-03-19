@@ -394,6 +394,18 @@ paths:
           in: path
           schema:
             type: string
+        - name: latitude
+          required: false
+          in: query
+          description: Requester latitude for nearby group discovery
+          schema:
+            type: string
+        - name: longitude
+          required: false
+          in: query
+          description: Requester longitude for nearby group discovery
+          schema:
+            type: string
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -435,6 +447,18 @@ paths:
           required: false
           in: query
           description: ISO 8601 end of range (events starting before this time)
+          schema:
+            type: string
+        - name: latitude
+          required: false
+          in: query
+          description: Requester latitude for nearby event discovery
+          schema:
+            type: string
+        - name: longitude
+          required: false
+          in: query
+          description: Requester longitude for nearby event discovery
           schema:
             type: string
         - name: X-Proxima-Nexus-Requester-User-Id
@@ -772,6 +796,7 @@ paths:
                 - admin
                 - owner
                 - associated_group
+                - nearby
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -1151,6 +1176,7 @@ paths:
                 - member
                 - admin
                 - owner
+                - nearby
         - name: X-Proxima-Nexus-Requester-User-Id
           in: header
           description: >-
@@ -1566,6 +1592,7 @@ components:
             - admin
             - owner
             - associated_group
+            - nearby
             - member
             - friend
             - blocked
@@ -1711,6 +1738,7 @@ components:
             - admin
             - owner
             - associated_group
+            - nearby
             - member
             - friend
             - blocked
@@ -1763,6 +1791,7 @@ components:
             - admin
             - owner
             - associated_group
+            - nearby
             - member
             - friend
             - blocked
@@ -1802,6 +1831,7 @@ components:
             - admin
             - owner
             - associated_group
+            - nearby
             - member
             - friend
             - blocked
@@ -2020,6 +2050,7 @@ components:
             - admin
             - owner
             - associated_group
+            - nearby
       required:
         - type
     GetEventsDto:
@@ -2194,6 +2225,7 @@ components:
             - member
             - admin
             - owner
+            - nearby
       required:
         - type
     EventSeriesEntityConnectionDto:
@@ -2215,6 +2247,7 @@ components:
             - admin
             - owner
             - associated_group
+            - nearby
             - member
             - friend
             - blocked

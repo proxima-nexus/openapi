@@ -5,6 +5,20 @@ All notable changes to the Proxima Nexus OpenAPI specification are documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2026-03-19
+
+### Added
+
+- **Geo-aware discovery filters**
+  - `GET /user/{userId}/groups`: added optional `latitude` and `longitude` query params for nearby group discovery.
+  - `GET /user/{userId}/events`: added optional `latitude` and `longitude` query params for nearby event discovery.
+
+### Changed
+
+- **Connection types**
+  - Added `nearby` to connection `type` enums used by event, group, and event-series connection DTOs/responses and related filters.
+  - `GetEventsDto` and group connection-type filters now accept `nearby` as a valid value.
+
 ## [2.3.1] - 2026-03-04
 
 ### Changed

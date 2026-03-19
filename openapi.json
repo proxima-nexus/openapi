@@ -591,6 +591,24 @@
             }
           },
           {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "description": "Requester latitude for nearby group discovery",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "description": "Requester longitude for nearby group discovery",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "X-Proxima-Nexus-Requester-User-Id",
             "in": "header",
             "description": "ID of the user getting groups of a user. If set, groups will be filtered to only include groups that the user can see, and requesterConnection will be set on the results.",
@@ -652,6 +670,24 @@
             "required": false,
             "in": "query",
             "description": "ISO 8601 end of range (events starting before this time)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "description": "Requester latitude for nearby event discovery",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "description": "Requester longitude for nearby event discovery",
             "schema": {
               "type": "string"
             }
@@ -1170,7 +1206,8 @@
                   "attendee",
                   "admin",
                   "owner",
-                  "associated_group"
+                  "associated_group",
+                  "nearby"
                 ]
               }
             }
@@ -1759,7 +1796,8 @@
                 "enum": [
                   "member",
                   "admin",
-                  "owner"
+                  "owner",
+                  "nearby"
                 ]
               }
             }
@@ -2392,6 +2430,7 @@
               "admin",
               "owner",
               "associated_group",
+              "nearby",
               "member",
               "friend",
               "blocked",
@@ -2590,6 +2629,7 @@
               "admin",
               "owner",
               "associated_group",
+              "nearby",
               "member",
               "friend",
               "blocked",
@@ -2658,6 +2698,7 @@
               "admin",
               "owner",
               "associated_group",
+              "nearby",
               "member",
               "friend",
               "blocked",
@@ -2707,6 +2748,7 @@
               "admin",
               "owner",
               "associated_group",
+              "nearby",
               "member",
               "friend",
               "blocked",
@@ -2997,7 +3039,8 @@
               "attendee",
               "admin",
               "owner",
-              "associated_group"
+              "associated_group",
+              "nearby"
             ]
           }
         },
@@ -3239,7 +3282,8 @@
             "enum": [
               "member",
               "admin",
-              "owner"
+              "owner",
+              "nearby"
             ]
           }
         },
@@ -3268,6 +3312,7 @@
               "admin",
               "owner",
               "associated_group",
+              "nearby",
               "member",
               "friend",
               "blocked",
