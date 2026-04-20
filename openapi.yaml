@@ -1907,6 +1907,14 @@ components:
           type: number
           description: Maximum number of attendees allowed (null = unlimited)
           example: 100
+        registrationFeeAmount:
+          type: number
+          description: Registration fee amount in minor units (e.g. cents). Must be set together with registrationFeeCurrency.
+          example: 500
+        registrationFeeCurrency:
+          type: string
+          description: ISO 4217 currency code, lowercase (e.g. eur). Must be set together with registrationFeeAmount.
+          example: eur
       required:
         - displayName
         - visibility
@@ -1988,6 +1996,14 @@ components:
           type: string
           description: ID of the event series this instance belongs to, if any
           example: series-weekly-standup
+        registrationFeeAmount:
+          type: number
+          description: Registration fee amount in minor units (e.g. cents)
+          example: 500
+        registrationFeeCurrency:
+          type: string
+          description: ISO 4217 currency code, lowercase (e.g. eur)
+          example: eur
       required:
         - startTime
         - endTime
@@ -2039,6 +2055,14 @@ components:
           type: number
           description: Maximum number of attendees allowed (null = unlimited)
           example: 100
+        registrationFeeAmount:
+          type: object
+          description: Registration fee amount in minor units (e.g. cents). Set to null to remove the fee.
+          example: 500
+        registrationFeeCurrency:
+          type: object
+          description: ISO 4217 currency code, lowercase (e.g. eur). Set to null to remove the fee.
+          example: eur
     MutateEventEntityConnectionDto:
       type: object
       properties:
@@ -2348,6 +2372,14 @@ components:
           type: number
           description: Maximum number of attendees per event instance (null = unlimited)
           example: 50
+        registrationFeeAmount:
+          type: number
+          description: Registration fee amount in minor units (e.g. cents). Must be set together with registrationFeeCurrency.
+          example: 500
+        registrationFeeCurrency:
+          type: string
+          description: ISO 4217 currency code, lowercase (e.g. eur). Must be set together with registrationFeeAmount.
+          example: eur
       required:
         - displayName
         - visibility
@@ -2436,6 +2468,14 @@ components:
           type: number
           description: Maximum number of attendees per event instance
           example: 50
+        registrationFeeAmount:
+          type: number
+          description: Registration fee amount in minor units (e.g. cents)
+          example: 500
+        registrationFeeCurrency:
+          type: string
+          description: ISO 4217 currency code, lowercase (e.g. eur)
+          example: eur
       required:
         - type
         - rrule
@@ -2482,6 +2522,14 @@ components:
           type: number
           description: Maximum number of attendees per event instance (null = unlimited)
           example: 50
+        registrationFeeAmount:
+          type: object
+          description: Registration fee amount in minor units (e.g. cents). Set to null to remove the fee.
+          example: 500
+        registrationFeeCurrency:
+          type: object
+          description: ISO 4217 currency code, lowercase (e.g. eur). Set to null to remove the fee.
+          example: eur
     GetEventSeriesDto:
       type: object
       properties:
